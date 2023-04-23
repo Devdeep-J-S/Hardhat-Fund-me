@@ -1,0 +1,41 @@
+{
+  "language": "Solidity",
+  "sources": {
+    "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\ninterface AggregatorV3Interface {\n  function decimals() external view returns (uint8);\n\n  function description() external view returns (string memory);\n\n  function version() external view returns (uint256);\n\n  function getRoundData(uint80 _roundId)\n    external\n    view\n    returns (\n      uint80 roundId,\n      int256 answer,\n      uint256 startedAt,\n      uint256 updatedAt,\n      uint80 answeredInRound\n    );\n\n  function latestRoundData()\n    external\n    view\n    returns (\n      uint80 roundId,\n      int256 answer,\n      uint256 startedAt,\n      uint256 updatedAt,\n      uint80 answeredInRound\n    );\n}\n"
+    },
+    "contracts/FundMe.sol": {
+      "content": "//SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\n// get funds\n// withdraw fund\n// set min fund price\n\n//Imports \nimport './PriceConverter.sol';\n\n//Errors \nerror FundMe__NotOwner(); // declaring custom error\n\ncontract FundMe {\n    using PriceConverter for uint256; // using for something library the library - class name here\n\n    uint256 public constant MINI_USD = 50 * 1e18; // const reduces gas usage good thing\n\n    address[] public funders;\n    mapping(address => uint256) public amountfunded;\n\n    address public immutable i_owner; // if value in fun not in global i_ just good pratice\n\n    AggregatorV3Interface public PriceFeed;\n\n    constructor(address priceFeedAddress) {\n        // it will give owner of contract the owner address\n        i_owner = msg.sender;\n        PriceFeed = AggregatorV3Interface(priceFeedAddress);\n    }\n\n    function fund() public payable {\n        // public so anyone can use it\n        // take prices and set min price in USD 50 $\n        require(\n            msg.value.getconversionrate(PriceFeed) >= MINI_USD,\n            'yo min limit is not reached!!!'\n        );\n        funders.push(msg.sender);\n        amountfunded[msg.sender] = msg.value; //msg. global declared variables\n        // revert stop till here and go back with remaing gas\n    }\n\n    function withdraw() public onlyOwner {\n        // onlyOwner check first then goes in function\n        // for ( start , end , step ) like c++\n\n        for (\n            uint256 funderindex = 0;\n            funderindex < funders.length;\n            ++funderindex\n        ) {\n            address temp_address = funders[funderindex];\n            amountfunded[temp_address] = 0;\n        }\n\n        // reset array\n        funders = new address[](0); // resetting with making new funder\n\n        // withdraw fund\n        // 3 fucntionality -> transfer , send , call  https://solidity-by-example.org/sending-ether/\n        // call best why link ...\n\n        (bool success, ) = payable(msg.sender).call{\n            value: address(this).balance\n        }(''); // this balcnce gives balance of contract - acts as wallet // blank for function we are not using now\n        // payable address type cast from only address\n        require(success, 'call failed!!!');\n    }\n\n    modifier onlyOwner() {\n        // great way to check before going into the code\n        // require(i_owner == msg.sender, \"Sender is not owner!!\");\n        // why custom error saves gas\n        if (msg.sender != i_owner) {\n            revert FundMe__NotOwner();\n        }\n        _; // this just represnt the rest of the code do\n    }\n}\n\n//advanced stuff ;\n//constant , immutable\n\n// custom errors\n\n// sender sends ETH without calling fund  // a true daan , fund :)\n// receive () , fallback()\n// above will trigger automatically if we don't want to store the data like senders\n// https://solidity-by-example.org/fallback/\n\n// for routing\n// receive() external payable{\n//    fund() ;\n//    }\n"
+    },
+    "contracts/PriceConverter.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\nimport '@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol';\n\n// oracle problem discussion thats why ising other link\n\nlibrary PriceConverter {\n    function getPrice(\n        AggregatorV3Interface pricefeed\n    ) internal view returns (uint256) {\n        // ABI Application Binary Interface\n        // address 0x694AA1769357215DE4FAC081bf1f309aDC325306\n\n        // for abi info about interface - boiler type abstarct class analogy\n\n        // removing hard coded address type depencdecy\n        // AggregatorV3Interface price = AggregatorV3Interface(\n        //     0x694AA1769357215DE4FAC081bf1f309aDC325306\n        // );\n\n        (, int256 num, , , ) = pricefeed.latestRoundData();\n        return uint256(num * 1e10); //type cast // to get 1e18 in both things\n    }\n\n    function getconversionrate(\n        uint256 amount,\n        AggregatorV3Interface pricefeed\n    ) internal view returns (uint256) {\n        return uint256((amount * getPrice(pricefeed)) / 1e18);\n    }\n}\n"
+    }
+  },
+  "settings": {
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "outputSelection": {
+      "*": {
+        "*": [
+          "abi",
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "evm.methodIdentifiers",
+          "metadata",
+          "devdoc",
+          "userdoc",
+          "storageLayout",
+          "evm.gasEstimates"
+        ],
+        "": [
+          "ast"
+        ]
+      }
+    },
+    "metadata": {
+      "useLiteralContent": true
+    }
+  }
+}
