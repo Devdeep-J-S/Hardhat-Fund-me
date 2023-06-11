@@ -1,7 +1,6 @@
 # Hardhat-Fund-me
 
 > Name: Devdeep Shetranjiwala  <br> 
-> Student ID: devdeep0702@gmail.com
 
 ## Quickstart
 ```
